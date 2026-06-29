@@ -3,6 +3,7 @@ import * as readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { McpHost } from "./host.js";
 import { loadConfig } from "./config.js";
+import { startServer } from "./server.js";
 import type { OllamaMessage } from "./types.js";
 
 const C = {
@@ -18,16 +19,20 @@ interface CliArgs {
   config: string;
   model?: string;
   once?: string;
+  serve: boolean;
+  port?: number;
   help: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = { config: "mcp.config.json", help: false };
+  const args: CliArgs = { config: "mcp.config.json", serve: false, help: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "-c" || a === "--config") args.config = argv[++i];
     else if (a === "-m" || a === "--model") args.model = argv[++i];
     else if (a === "--once") args.once = argv[++i];
+    else if (a === "--serve") args.serve = true;
+    else if (a === "--port") args.port = Number(argv[++i]);
     else if (a === "-h" || a === "--help") args.help = true;
   }
   return args;
@@ -43,6 +48,8 @@ ollama-mcp-host — 로컬 Ollama 모델로 여러 MCP 서버를 한꺼번에 �
   -c, --config <path>   MCP 설정 파일 (기본: mcp.config.json)
   -m, --model <tag>     설정의 model 을 덮어씀 (예: gemma4:e4b)
   --once <질문>          대화형 대신 질문 하나만 처리하고 종료
+  --serve               HTTP API 서버로 띄움 (POST /chat, GET /health, /tools)
+  --port <번호>          --serve 포트 (기본: 8080)
   -h, --help            이 도움말
 
 대화 중 명령:
@@ -79,6 +86,12 @@ async function main() {
           `도구 호출이 안 될 수 있습니다. (ollama show ${config.model} 로 확인)`
       )
     );
+  }
+
+  // HTTP API 서버 모드: connect 후 서버만 띄우고 대기
+  if (args.serve) {
+    await startServer(host, config, { port: args.port });
+    return;
   }
 
   const messages: OllamaMessage[] = [];

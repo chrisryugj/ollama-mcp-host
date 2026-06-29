@@ -1,6 +1,6 @@
 {
   "name": "ollama-mcp-host",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Run multiple MCP servers with a local Ollama model (gemma & other tool-capable models). One model auto-selects and calls tools across stdio MCP servers — e.g. korean-law-mcp + kordoc. Cloud-free, air-gapped friendly, single runtime dependency. CLI + library.",
   "type": "module",
   "main": "./dist/index.js",

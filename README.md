@@ -276,6 +276,58 @@ Ask your network admin to **allow outbound to `law.go.kr`** (or route it through
 
 ---
 
+## 🐳 Docker
+
+Run everything in containers — the host + both MCP servers in one image, and Ollama in another. They're wired together by `docker-compose.yml`.
+
+```bash
+# 1. build & start (app + ollama)
+docker compose up -d --build
+
+# 2. pull the model into the ollama container (one time)
+docker compose exec ollama ollama pull gemma4:e4b
+
+# 3a. interactive chat
+LAW_OC=your-key docker compose run --rm app
+
+# 3b. or a one-shot question
+LAW_OC=your-key docker compose run --rm app --once "Which agency oversees the Road Traffic Act?"
+```
+
+How it's structured:
+- **One app image** holds `ollama-mcp-host` + `korean-law-mcp` + `kordoc` (installed from npm, versions pinned). The host launches the two MCP servers as stdio child processes, so they must live in the same image.
+- **Ollama runs as its own container** (`ollama/ollama`); the app reaches it at `http://ollama:11434` (set in `mcp.config.docker.json`).
+- The model is kept in a named volume, so you pull it once.
+
+**GPU:** on Linux with NVIDIA, uncomment the `deploy.resources` block in `docker-compose.yml`. On macOS, Docker can't use the GPU — run Ollama on the host instead and point the app at `http://host.docker.internal:11434`.
+
+**Air-gapped:** `docker save` the built image to a tarball, carry it in, `docker load`. Move the model separately into the volume (see [offline section](#-running-inside-an-offline-network)).
+
+## 🌐 HTTP API
+
+Instead of the interactive CLI, expose an HTTP endpoint so other apps can ask questions:
+
+```bash
+ollama-mcp-host -c mcp.config.json --serve --port 8080
+# in Docker:  docker compose run --rm -p 8080:8080 app --serve --port 8080
+```
+
+| Method | Path | Body | Returns |
+|--------|------|------|---------|
+| `GET`  | `/health` | — | `{status, model, servers, tools}` |
+| `GET`  | `/tools` | — | list of exposed tools |
+| `POST` | `/chat` | `{"message": "..."}` | `{answer, toolCalls, messages}` |
+| `POST` | `/chat` | `{"messages": [...]}` | same — for multi-turn (send the running history) |
+
+```bash
+curl -X POST http://localhost:8080/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Which agency oversees the Road Traffic Act?"}'
+# → {"answer":"...","toolCalls":[{"server":"law","tool":"search_law",...}],"messages":[...]}
+```
+
+`toolCalls` shows which MCP tools were invoked for that answer. The server is stateless — for a conversation, send the full `messages` array back each time.
+
 ## 🧑‍💻 Use as a library
 
 ```ts
@@ -305,6 +357,8 @@ cd ollama-mcp-host && npm install && npm run build && npm test
 | `-c, --config <path>` | config file (default `mcp.config.json`) |
 | `-m, --model <tag>` | override the model for this run |
 | `--once "<question>"` | answer a single question and exit (for scripts) |
+| `--serve` | run as an HTTP API server (`POST /chat`, `GET /health`, `/tools`) |
+| `--port <n>` | port for `--serve` (default 8080) |
 | `-h, --help` | help |
 
 ### Config notes

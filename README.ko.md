@@ -336,6 +336,58 @@ ollama list                                       # gemma4:e4b 가 보이면 성
 
 ---
 
+## 🐳 도커로 돌리기
+
+전부 컨테이너로 띄울 수 있습니다 — 호스트 + 두 MCP를 한 이미지에, Ollama를 다른 컨테이너에. `docker-compose.yml`이 둘을 묶어 줍니다.
+
+```bash
+# 1. 빌드 + 기동 (app + ollama)
+docker compose up -d --build
+
+# 2. ollama 컨테이너에 모델 받기 (최초 1회)
+docker compose exec ollama ollama pull gemma4:e4b
+
+# 3a. 대화형
+LAW_OC=발급키 docker compose run --rm app
+
+# 3b. 또는 질문 하나만
+LAW_OC=발급키 docker compose run --rm app --once "도로교통법 소관 부처 알려줘"
+```
+
+구조:
+- **app 이미지 하나**에 `ollama-mcp-host` + `korean-law-mcp` + `kordoc`이 다 들어갑니다(npm에서 설치, 버전 고정). 호스트가 두 MCP를 stdio 자식 프로세스로 띄우기 때문에 같은 이미지 안에 있어야 합니다.
+- **Ollama는 별도 컨테이너**(`ollama/ollama`)로 돌고, app은 `http://ollama:11434`로 접속합니다(`mcp.config.docker.json`에 설정됨).
+- 모델은 named volume에 보관되어 한 번만 받으면 됩니다.
+
+**GPU:** Linux + NVIDIA면 `docker-compose.yml`의 `deploy.resources` 블록 주석을 해제하세요. macOS는 도커가 GPU를 못 쓰니, Ollama를 호스트에서 직접 돌리고 app이 `http://host.docker.internal:11434`를 보게 하세요.
+
+**폐쇄망:** 빌드한 이미지를 `docker save`로 tar 떠서 반입하고 `docker load`. 모델은 따로 volume에 넣으면 됩니다([오프라인 섹션](#-인터넷이-안-되는-내부망에-설치하기) 참고).
+
+## 🌐 HTTP API
+
+대화형 CLI 대신, 다른 프로그램이 질문할 수 있게 HTTP 엔드포인트로 띄울 수 있습니다.
+
+```bash
+ollama-mcp-host -c mcp.config.json --serve --port 8080
+# 도커에서:  docker compose run --rm -p 8080:8080 app --serve --port 8080
+```
+
+| 메서드 | 경로 | 본문 | 반환 |
+|--------|------|------|---------|
+| `GET`  | `/health` | — | `{status, model, servers, tools}` |
+| `GET`  | `/tools` | — | 노출 도구 목록 |
+| `POST` | `/chat` | `{"message": "..."}` | `{answer, toolCalls, messages}` |
+| `POST` | `/chat` | `{"messages": [...]}` | 멀티턴용 — 직전까지의 대화 배열을 그대로 전달 |
+
+```bash
+curl -X POST http://localhost:8080/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"도로교통법 소관 부처 알려줘"}'
+# → {"answer":"...","toolCalls":[{"server":"law","tool":"search_law",...}],"messages":[...]}
+```
+
+`toolCalls`에 그 답을 만들 때 실제로 호출된 MCP 도구가 담깁니다. 서버는 stateless라, 대화를 이어가려면 매번 `messages` 배열을 통째로 보내면 됩니다.
+
 ## 🧑‍💻 개발자용: 다른 프로그램 안에서 불러 쓰기
 
 CLI 말고 코드에서 직접 쓰고 싶다면 라이브러리로 제공됩니다.
@@ -369,6 +421,8 @@ npm test          # 단위 테스트
 | `-c, --config <path>` | 설정 파일 경로 (기본 `mcp.config.json`) |
 | `-m, --model <tag>` | 설정의 모델을 일시적으로 바꿔 실행 |
 | `--once "<질문>"` | 대화창 없이 질문 하나만 처리하고 종료 (스크립트용) |
+| `--serve` | HTTP API 서버로 띄움 (`POST /chat`, `GET /health`, `/tools`) |
+| `--port <번호>` | `--serve` 포트 (기본 8080) |
 | `-h, --help` | 도움말 |
 
 ### 설정 파일 참고

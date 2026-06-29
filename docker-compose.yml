@@ -1,0 +1,37 @@
+services:
+  # AI 엔진 — 모델은 named volume 에 보관된다 (한 번만 pull)
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    # NVIDIA GPU 가속을 쓰려면 아래 주석을 해제 (Linux + nvidia-container-toolkit).
+    # 맥(Apple Silicon)은 도커 안에서 GPU 가속이 안 되니, 그땐 Ollama 를
+    # 호스트에서 직접 돌리고 ollamaHost 를 http://host.docker.internal:11434 로 두세요.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # 호스트 + 법령/문서 MCP (한 이미지)
+  app:
+    build: .
+    depends_on:
+      - ollama
+    environment:
+      # 법령 검색용 법제처 키. 호스트의 LAW_OC 를 그대로 주입한다.
+      - LAW_OC=${LAW_OC:-}
+    # 대화형 CLI 라서 stdin/tty 가 필요하다. (docker compose run app 으로 사용)
+    stdin_open: true
+    tty: true
+    # 생성한 문서를 호스트와 주고받으려면 마운트 (선택)
+    volumes:
+      - ./data:/data
+
+volumes:
+  ollama-models:
