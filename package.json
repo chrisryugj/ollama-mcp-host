@@ -1,7 +1,7 @@
 {
   "name": "ollama-mcp-host",
-  "version": "0.1.0",
-  "description": "로컬 Ollama(gemma 등 tool-capable 모델)로 여러 MCP 서버를 한꺼번에 돌리는 호스트. korean-law-mcp · kordoc 같은 stdio MCP를 등록하면 모델이 도구를 골라 호출한다. 내부망/오프라인 친화 — 런타임 의존성은 MCP SDK 하나뿐.",
+  "version": "0.1.1",
+  "description": "Run multiple MCP servers with a local Ollama model (gemma & other tool-capable models). One model auto-selects and calls tools across stdio MCP servers — e.g. korean-law-mcp + kordoc. Cloud-free, air-gapped friendly, single runtime dependency. CLI + library.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
