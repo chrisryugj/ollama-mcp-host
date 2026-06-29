@@ -1,0 +1,57 @@
+{
+  "name": "ollama-mcp-host",
+  "version": "0.1.0",
+  "description": "로컬 Ollama(gemma 등 tool-capable 모델)로 여러 MCP 서버를 한꺼번에 돌리는 호스트. korean-law-mcp · kordoc 같은 stdio MCP를 등록하면 모델이 도구를 골라 호출한다. 내부망/오프라인 친화 — 런타임 의존성은 MCP SDK 하나뿐.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "ollama-mcp-host": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "mcp.config.example.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "node dist/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "ollama",
+    "gemma",
+    "model-context-protocol",
+    "korean-law-mcp",
+    "kordoc",
+    "llm",
+    "offline",
+    "on-premise"
+  ],
+  "author": "chrisryugj <ryuseungin@naver.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrisryugj/ollama-mcp-host.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

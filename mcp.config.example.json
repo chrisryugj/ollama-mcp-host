@@ -1,0 +1,21 @@
+{
+  "model": "gemma4:e4b",
+  "ollamaHost": "http://localhost:11434",
+  "system": "당신은 한국 법령 검색과 공문서 작성을 돕는 비서입니다. 사용자의 질문에 답할 때, 관련 도구가 있으면 반드시 도구를 호출해 실제 데이터를 가져온 뒤 그 결과에 근거해 한국어로 답하세요. 추측으로 법조문이나 판례 번호를 지어내지 마세요. 문서를 만들거나 변환하는 요청은 kordoc 도구를 사용하세요.",
+  "maxToolRounds": 8,
+  "servers": [
+    {
+      "name": "law",
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/korean-law-mcp/build/index.js"],
+      "env": {
+        "LAW_OC": "${LAW_OC}"
+      }
+    },
+    {
+      "name": "kordoc",
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/kordoc/dist/mcp.js"]
+    }
+  ]
+}

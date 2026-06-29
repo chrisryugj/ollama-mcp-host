@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+.env.local
+# 테스트 산출물
+test-output/
+*.hwpx
