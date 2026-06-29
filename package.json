@@ -12,7 +12,7 @@
     }
   },
   "bin": {
-    "ollama-mcp-host": "./dist/cli.js"
+    "ollama-mcp-host": "dist/cli.js"
   },
   "files": [
     "dist",
