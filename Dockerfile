@@ -15,5 +15,9 @@ WORKDIR /app
 # 도커용 설정 (ollamaHost 가 ollama 컨테이너를 가리킴)
 COPY mcp.config.docker.json ./mcp.config.json
 
+# non-root 실행 (node 이미지 기본 제공 uid 1000). 호스트는 /app 에 쓰지 않는다.
+RUN chown -R node:node /app
+USER node
+
 # 대화형 CLI 로 실행. 배치로 쓰려면 compose 에서 --once 를 덧붙인다.
 ENTRYPOINT ["ollama-mcp-host", "-c", "mcp.config.json"]
